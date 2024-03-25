@@ -1,0 +1,10 @@
+Namespace(model_id='facebook/opt-125m', ppl_target=40.0, param_ratio_target=-1, act_aware=True, alpha=0.5, n_calib_samples=16, calib_dataset='wikitext2', scaling_method='abs_mean', sensitivity_metric='ppl', use_cache=True, weight_quant='none', eval_mmlu=False, sigma_fuse='UV')
+{'wikitext2': 36.37122344970703, 'ptb': 46.91969680786133}
+Namespace(model_id='facebook/opt-125m', ppl_target=40.0, param_ratio_target=-1, act_aware=True, alpha=0.5, n_calib_samples=16, calib_dataset='wikitext2', scaling_method='abs_mean', sensitivity_metric='ppl', use_cache=True, weight_quant='none', eval_mmlu=False, sigma_fuse='UV')
+{'wikitext2': 36.80561065673828, 'ptb': 47.474830627441406}
+Namespace(model_id='facebook/opt-125m', ppl_target=40.0, param_ratio_target=-1, act_aware=True, alpha=0.5, n_calib_samples=16, calib_dataset='wikitext2', scaling_method='abs_mean', sensitivity_metric='ppl', use_cache=True, weight_quant='none', eval_mmlu=False, sigma_fuse='UV')
+{'wikitext2': 35.91740798950195, 'ptb': 48.30624771118164}
+Namespace(model_id='facebook/opt-125m', ppl_target=40.0, param_ratio_target=-1, act_aware=True, alpha=0.5, n_calib_samples=16, calib_dataset='wikitext2', scaling_method='abs_mean', sensitivity_metric='ppl', use_cache=True, weight_quant='none', eval_mmlu=False, sigma_fuse='UV')
+{'wikitext2': 37.35913848876953, 'ptb': 48.06573486328125}
+Namespace(model_id='meta-llama/Llama-2-7b-hf', huggingface_token='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', ppl_target=-1, param_ratio_target=0.9, act_aware=True, alpha=0.5, n_calib_samples=32, calib_dataset='wikitext2', scaling_method='abs_mean', sensitivity_metric='ppl', use_cache=True, weight_quant='none', eval_mmlu=False, sigma_fuse='UV')
+{'wikitext2': 5.943213939666748, 'ptb': 32.72572708129883}
