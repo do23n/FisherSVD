@@ -4,11 +4,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, OPTForCausalLM
 from transformers.models.opt.configuration_opt import OPTConfig
 from m_evaluate import evaluate_model
 from datautils import get_calib_data
-from act_aware_utils import calib_input_distribution, calib_fisher_info
+from act_aware_utils import calib_input_distribution, calib_fisher_info, get_fisher_info_per_element
 from sensitivity import calib_sensitivity_ppl, calib_sensitivity_stable_rank
 from quantization import rtn_quant_sequential
 from binary_search import binary_search_truncation_rank
-from plot_utils import plot_sensitivity_heatmap
+from plot_utils import plot_sensitivity_heatmap, plot_sensitivity_and_fisher
 
 
 def main(args):
@@ -32,6 +32,10 @@ def main(args):
 
     # sensitivity calibration
     calib_loader = get_calib_data(args.calib_dataset, tokenizer, model_id, 256)
+
+    # get mean of per-element fisher information for each layer
+    mean_fisher_info_per_layer = get_fisher_info_per_element(model, calib_loader, args.use_cache)
+
     if "fisher" in args.scaling_method:
         calib_fisher_info(model, calib_loader, args.use_cache)
     if "abs" in args.scaling_method:
@@ -44,6 +48,11 @@ def main(args):
         sensitivity = calib_sensitivity_stable_rank(
             model, calib_loader, args, args.use_cache
         )
+
+    plot_sensitivity_and_fisher(sensitivity_dict=sensitivity, fisher_dict=mean_fisher_info_per_layer,
+                                truncation_ratio=0.9, num_adj_blocks=1, 
+                                title="Layer Sensitivity and Mean Fisher Info for {}".format(model_id),
+                                filename=f"figures/corr_ppl_fisher_{model_id.replace('/','_')}")
 
     plot_sensitivity_heatmap(sensitivity_dict=sensitivity, num_adj_blocks=2, 
                              title="Layer Sensitivity for {}".format(model_id), 

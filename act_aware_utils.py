@@ -21,6 +21,7 @@ def calib_fisher_info(model, calib_loader, use_cache=True):
             module.fisher_info = 0
 
     # get fisher info
+    print(f"Running calib_fisher_info:")
     for batch in tqdm(calib_loader):
         input_ids = batch["input_ids"][:, :-1].to(model.device)
         labels = batch["input_ids"][:, 1:].to(model.device)
@@ -42,6 +43,51 @@ def calib_fisher_info(model, calib_loader, use_cache=True):
             module._forward_hooks.clear()
             all_fisher_info[name] = module.fisher_info
     torch.save(all_fisher_info, cache_file)
+
+
+def get_fisher_info_per_element(model, calib_loader, use_cache=True):
+    model_id = model.config._name_or_path
+    mean_cache_file = f"cache/{model_id.replace('/','_')}_mean_fisher_info_per_layer.pt"
+    if os.path.exists(mean_cache_file) and use_cache:
+        mean_fisher_info_per_layer = torch.load(mean_cache_file, map_location="cpu")
+        return mean_fisher_info_per_layer
+    
+    model.eval()
+
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            module.fisher_info_per_element = 0
+
+    # get fisher info
+    print(f"Running calib_fisher_info_per_element:")
+    for batch in tqdm(calib_loader):
+        input_ids = batch["input_ids"][:, :-1].to(model.device)
+        labels = batch["input_ids"][:, 1:].to(model.device)
+        out = model(input_ids=input_ids, labels=labels)
+        out[0].backward()
+        for name, module in model.named_modules():
+            if isinstance(module, nn.Linear):
+                module.fisher_info_per_element += module.weight.grad.detach().pow(2)
+        model.zero_grad()
+    
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            module.fisher_info_per_element = module.fisher_info_per_element.div(len(calib_loader)).sqrt()
+
+    # remove hooks
+    all_fisher_info_per_element = {}
+    mean_fisher_info_per_layer = {}
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            module._forward_hooks.clear()
+            all_fisher_info_per_element[name] = module.fisher_info_per_element
+            mean_fisher_info_per_layer[name] = all_fisher_info_per_element[name].mean()
+
+    # torch.save(all_fisher_info_per_element, cache_file)
+    torch.save(mean_fisher_info_per_layer, mean_cache_file)
+    print(f"Finish get_fisher_info_per_element")
+
+    return mean_fisher_info_per_layer
 
 
 @torch.no_grad()
@@ -81,6 +127,7 @@ def calib_input_distribution(model, calib_loader, method, use_cache=True):
             module.register_forward_hook(hook)
 
     # get activation distribution
+    print(f"Running calib_input_distribution:")
     for batch in tqdm(calib_loader):
         # print(batch)
         batch = {k: v.to(model.device) for k, v in batch.items()}
