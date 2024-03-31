@@ -32,10 +32,15 @@ def calib_sensitivity_ppl(model, calib_loader, args, use_cache=True):
                 modules.append(raw_linear)
 
     sensitivity_dict = {}
+
     param_ratio_candidates = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     input_ids = torch.cat([_["input_ids"] for _ in calib_loader], 0)
     print(f"input_ids.shape={input_ids.shape}")
     print(f"Running calib_sensitivity_ppl:")
+
+    full_model_perplexity = evaluate_perplexity(model, input_ids, args.n_calib_samples)
+    sensitivity_dict['full_model'] = full_model_perplexity
+
     pbar = tqdm(total=len(linear_info) * len(param_ratio_candidates))
     for raw_linear, info in linear_info.items():
         sensitivity_dict[info["full_name"]] = {}

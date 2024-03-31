@@ -25,6 +25,7 @@ def binary_search_truncation_rank(model, sensitivity_dict, calib_loader, args):
                 modules.append(raw_linear)
 
     sensitivity_list = []
+    sensitivity_dict.pop('full_model', None)
     for layername, v in sensitivity_dict.items():
         for ratio, ppl in v.items():
             sensitivity_list.append((layername, ratio, ppl))
