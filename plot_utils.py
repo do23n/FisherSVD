@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-def plot_heatmap(x_values, y_values, x_label, y_label, title, heatmap_matrix, filename):
-    fig, ax = plt.subplots(figsize=(10,10))
+def plot_heatmap(x_values, y_values, x_label, y_label, title, heatmap_matrix, filename, figsize):
+    fig, ax = plt.subplots(figsize=figsize)
     heatmap = ax.imshow(heatmap_matrix, cmap='viridis')
 
     # set labels and ticks
@@ -24,14 +24,14 @@ def plot_heatmap(x_values, y_values, x_label, y_label, title, heatmap_matrix, fi
     # Loop over data dimensions and create text annotations.
     for i in range(len(heatmap_matrix)):
         for j in range(len(heatmap_matrix[0])):
-            ax.text(j, i, round(heatmap_matrix[i, j],2),
+            ax.text(j, i, round(heatmap_matrix[i, j],3),
                     ha="center", va="center", color="w")
 
     # Save the plot
     plt.savefig(filename, bbox_inches="tight")
     plt.close()
 
-def plot_sensitivity_heatmap(sensitivity_dict, num_adj_blocks, title, filename):
+def plot_sensitivity_heatmap(sensitivity_dict, num_adj_blocks, title, filename, figsize):
     layer_names = list(sensitivity_dict.keys())
     layer_names.remove('full_model')
     param_ratios = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -61,15 +61,15 @@ def plot_sensitivity_heatmap(sensitivity_dict, num_adj_blocks, title, filename):
                     y_values=param_ratios, 
                     x_label="layer", y_label="truncation ratio", title=title, 
                     heatmap_matrix=perplexity_values[:,i:end_idx],
-                    filename=fname)
+                    filename=fname, figsize=figsize)
         i += cur_block_size
 
-def plot_barh(y_values, x1_values, x2_values, y_label, x1_label, x2_label, title, truncation_ratio, filename):
+def plot_two_barh(y_values, x1_values, x2_values, y_label, x1_label, x2_label, title, truncation_ratio, filename, figsize):
     data = {x1_label: x1_values, x2_label: x2_values}
     df = pd.DataFrame(data=data, index=y_values)
 
     width=0.25
-    fig, ax1 = plt.subplots(figsize=(10,10))
+    fig, ax1 = plt.subplots(figsize=figsize)
     ax1.set_title(title, fontsize=12)
 
     color = 'red'
@@ -98,7 +98,30 @@ def plot_barh(y_values, x1_values, x2_values, y_label, x1_label, x2_label, title
     plt.savefig(filename, bbox_inches="tight")
     plt.close()
 
-def plot_sensitivity_and_fisher(sensitivity_dict, fisher_dict, truncation_ratio, num_adj_blocks, title, filename):
+def plot_one_barh(y_values, x_values, y_label, x_label, title, filename, figsize):
+    data = {x_label: x_values}
+    df = pd.DataFrame(data=data, index=y_values)
+
+    width=0.25
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_title(title, fontsize=12)
+
+    color = 'blue'
+    ax.set_ylabel(y_label, fontsize=12)
+    df[x_label].astype(float).plot(kind='barh', color=color, ax=ax, width=width, position=1)
+    ax.set_xlabel(x_label, color=color, fontsize=12)
+    ax.tick_params(axis='x', labelcolor=color, labelsize=12, rotation=45)
+    fig.tight_layout()
+
+    # annotate value on bar plots
+    for p in ax.patches:
+        ax.annotate(str(round(p.get_width(),6)), (p.get_width() * 1.005, p.get_y() + 0.3 * p.get_height()))
+
+    # Save the plot
+    plt.savefig(filename, bbox_inches="tight")
+    plt.close()
+
+def plot_sensitivity_and_fisher(sensitivity_dict, fisher_dict, truncation_ratio, num_adj_blocks, title, filename, figsize):
     layer_names = list(sensitivity_dict.keys())
     full_model_ppl = sensitivity_dict['full_model']
     layer_names.remove('full_model')
@@ -122,12 +145,38 @@ def plot_sensitivity_and_fisher(sensitivity_dict, fisher_dict, truncation_ratio,
                              for layer_name in layer_names][i:end_idx]
         fisher_values = [fisher_dict[name] for name in layer_names[i:end_idx]]
         
-        plot_barh(y_values=layer_names[i:end_idx],
+        plot_two_barh(y_values=layer_names[i:end_idx],
                   x1_values=perplexity_values, 
                   x2_values=fisher_values,
                   y_label="layer", 
                   x1_label="sensitivity", x2_label='mean fisher', title=title,
                   truncation_ratio=truncation_ratio,
-                  filename=fname)
+                  filename=fname, figsize=figsize)
 
         i += cur_block_size
+
+def plot_reg_score_ppl_across_ratio(sensitivity_dict, all_reg_score, filename, figsize):
+    layer_names = list(sensitivity_dict.keys())
+    layer_names.remove('full_model')
+    
+    y_values = ['model.layers.{}'.format(i) for i in range(31,-1,-1)]
+    x_values = list()
+    for i in range(1,8):
+        component = layer_names[i].split('.')[3:]
+        x_values.append('.'.join(component))
+
+    fname = filename + f"/all_reg_score.png"
+
+    plot_heatmap(x_values=x_values, y_values=y_values, 
+                 x_label='block component', y_label='block', 
+                 title='(Per-layer) R-squared of linear regression between Y=sensitivity and X=ratio', 
+                 heatmap_matrix= all_reg_score[1:].reshape(32,7),
+                 filename=fname, figsize=figsize)
+
+def plot_reg_score_ppl_from_fisher(all_reg_score, filename, figsize):
+    truncation_ratios = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    fname = filename + f"/all_reg_score.png"
+    plot_one_barh(y_values=truncation_ratios, x_values=all_reg_score, 
+                  y_label='truncation ratio', x_label='R-squared', 
+                  title='(Per truncation ratio) R-squared of linear regression between Y=sensitivity and X=mean-Fisher',
+                  filename=fname, figsize=figsize)
