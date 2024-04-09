@@ -46,7 +46,7 @@ def plot_sensitivity_heatmap(sensitivity_dict, num_adj_blocks, title, filename, 
         cur_layer = layer_names[i]
         cur_block_size = 7 if "." in cur_layer else 1
         next_block_size = 7
-        print("i={}, layer_names[i]={}".format(i, layer_names[i]))
+        # print("i={}, layer_names[i]={}".format(i, layer_names[i]))
 
         layer_idx = int(layer_names[i].split(".")[2]) if "." in cur_layer else -1
         if  "." not in cur_layer:
@@ -180,3 +180,20 @@ def plot_reg_score_ppl_from_fisher(all_reg_score, filename, figsize):
                   y_label='truncation ratio', x_label='R-squared', 
                   title='(Per truncation ratio) R-squared of linear regression between Y=sensitivity and X=mean-Fisher',
                   filename=fname, figsize=figsize)
+
+def plot_final_ratio(sensitivity_dict, all_selected_ratio, filename, figsize):
+    layer_names = list(sensitivity_dict.keys())
+    y_values = ['model.layers.{}'.format(i) for i in range(31,-1,-1)]
+    x_values = list()
+    for i in range(1,8):
+        component = layer_names[i].split('.')[3:]
+        x_values.append('.'.join(component))
+
+    fname = filename + f"/all_selected_ratio.png"
+
+    plot_heatmap(x_values=x_values, y_values=y_values,
+                 x_label='block component', y_label='block',
+                 title='All selected ratios for LlaMa -2 7b',
+                 heatmap_matrix=all_selected_ratio[1:].reshape(32,7),
+                 filename=fname, figsize=figsize)
+    

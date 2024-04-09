@@ -9,7 +9,7 @@ from sensitivity import calib_sensitivity_ppl, calib_sensitivity_stable_rank
 from predict_utils import linearize_ppl_from_fisher, linearize_ppl_across_truncation_ratio
 from quantization import rtn_quant_sequential
 from binary_search import binary_search_truncation_rank
-from plot_utils import plot_sensitivity_heatmap, plot_sensitivity_and_fisher, plot_reg_score_ppl_across_ratio, plot_reg_score_ppl_from_fisher
+from plot_utils import plot_sensitivity_heatmap, plot_sensitivity_and_fisher, plot_reg_score_ppl_across_ratio, plot_reg_score_ppl_from_fisher, plot_final_ratio
 
 
 def main(args):
@@ -80,7 +80,11 @@ def main(args):
 
     # search best truncation rank for each layer
 
-    binary_search_truncation_rank(model, sensitivity, calib_loader, args)
+    all_selected_ratio = binary_search_truncation_rank(model, sensitivity, calib_loader, args)
+
+    plot_final_ratio(sensitivity_dict=sensitivity, all_selected_ratio=all_selected_ratio,
+                     filename=f"figures/final_ratio_{model_id.replace('/','_')}",
+                     figsize=(50,30))
 
     # quantization
     if args.weight_quant != "none":
