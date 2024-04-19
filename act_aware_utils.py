@@ -69,7 +69,7 @@ def get_fisher_info_per_element(model, calib_loader, use_cache=True):
             if isinstance(module, nn.Linear):
                 module.fisher_info_per_element += module.weight.grad.detach().pow(2)
         model.zero_grad()
-    
+            
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):
             module.fisher_info_per_element = module.fisher_info_per_element.div(len(calib_loader)).sqrt()
@@ -84,7 +84,7 @@ def get_fisher_info_per_element(model, calib_loader, use_cache=True):
             mean_fisher_info_per_layer[name] = all_fisher_info_per_element[name].mean()
 
     # torch.save(all_fisher_info_per_element, cache_file)
-    torch.save(mean_fisher_info_per_layer, mean_cache_file)
+    # torch.save(mean_fisher_info_per_layer, mean_cache_file)
     print(f"Finish get_fisher_info_per_element")
 
     return mean_fisher_info_per_layer

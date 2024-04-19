@@ -135,6 +135,7 @@ def evaluate_model(
     num_fewshot: Number of examples in few-shot context
     eval_ppl: str datasets are split by , such as 'wikitext2,ptb,c4'
     """
+    model.half()
     lm = EvalLM(model, tokenizer, batch_size=batch_size)
     results = {}
     if eval_ppl:

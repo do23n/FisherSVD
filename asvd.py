@@ -10,7 +10,7 @@ from predict_utils import linearize_ppl_from_fisher, linearize_ppl_across_trunca
 from quantization import rtn_quant_sequential
 from binary_search import binary_search_truncation_rank
 from plot_utils import plot_sensitivity_heatmap, plot_sensitivity_and_fisher, plot_reg_score_ppl_across_ratio, plot_reg_score_ppl_from_fisher, plot_final_ratio
-
+from per_element_weighted_svd import decompose_model
 
 def main(args):
     model_id = args.model_id
@@ -85,6 +85,11 @@ def main(args):
     plot_final_ratio(sensitivity_dict=sensitivity, all_selected_ratio=all_selected_ratio,
                      filename=f"figures/final_ratio_{model_id.replace('/','_')}",
                      figsize=(50,30))
+
+    # per-element Fisher weighted svd
+    if args.per_element_fisher:
+        compress_ratio = decompose_model(model, sensitivity, rank=600, max_iter=20, threshold=1e-2)
+        print('compress_ratio = {}'.format(compress_ratio))
 
     # quantization
     if args.weight_quant != "none":
@@ -197,6 +202,11 @@ if __name__ == "__main__":
         default="UV",
         help="sigma fuse method",
         choices=["U", "V", "UV"],
+    )
+    parser.add_argument(
+        "--per_element_fisher",
+        action="store_true",
+        help="do per element fisher weighted svd",
     )
     args = parser.parse_args()
 
