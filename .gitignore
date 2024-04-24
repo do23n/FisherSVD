@@ -1,1 +1,5 @@
 !cache/
+slurm*.out
+output/
+run_asvd.sh
+modules/
