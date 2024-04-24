@@ -40,7 +40,7 @@ def per_element_weighted_svd(w, weight, rank, max_iter=10, threshold=1e-3):
     return u, s, vt
 
     
-def decompose_model(model, sensitivity_dict, rank, max_iter, threshold):        
+def decompose_model(model, sensitivity_dict, rank, max_iter, threshold, ratio = None):        
     print(f"Start decompose_model:")
     layer_names = list(sensitivity_dict.keys())
     if 'full_model' in layer_names:
@@ -67,15 +67,23 @@ def decompose_model(model, sensitivity_dict, rank, max_iter, threshold):
                 modules.append(raw_linear)
 
     for layername in layer_names:
-        print(f"{layername}")
+        print(f"layer: {layername}")
         raw_linear = module_dict[layername]
         info = linear_info[raw_linear]
         tot_params += raw_linear.weight.numel()
-        compress_params += (raw_linear.weight.shape[0] + raw_linear.weight.shape[1]) * rank
-        print(raw_linear.weight.shape)
-        print(raw_linear.weight.numel())
-        print( (raw_linear.weight.shape[0] + raw_linear.weight.shape[1]) * rank)
-
+        if ratio:
+            w_compress_params = int(raw_linear.weight.numel() * ratio)
+            compress_params += w_compress_params
+            rank = w_compress_params // (raw_linear.in_features + raw_linear.out_features)
+        else:
+            compress_params += (raw_linear.weight.shape[0] + raw_linear.weight.shape[1]) * rank
+        print(f'raw shape: {raw_linear.weight.shape}')
+        print(f'raw n_params: {raw_linear.weight.numel()}')
+        if ratio:
+            print(f'ratio compress: {int(tot_params * ratio)}')
+            print(f'rank after ratio: {rank}')
+        else:
+            print(f' rank compress: {(raw_linear.weight.shape[0] + raw_linear.weight.shape[1]) * rank}')
 
 
         w = raw_linear.weight.data.float()
