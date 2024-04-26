@@ -83,6 +83,21 @@ def binary_search_truncation_rank(model, sensitivity_dict, calib_loader, args):
     layers_min_ratio = {layername: 1 for layername in sensitivity_dict.keys()}
     for layername, ratio, ppl in sorted_sensitive_list[mid:]:
         layers_min_ratio[layername] = min(layers_min_ratio[layername], ratio)
+    # for layername, ratio in tqdm(layers_min_ratio.items()):
+    #     # set ratio
+    #     raw_linear = module_dict[layername]
+    #     info = linear_info[raw_linear]
+    #     svd_linear = SVDLinear.from_linear(
+    #         raw_linear,
+    #         param_ratio=ratio,
+    #         alpha=args.alpha,
+    #         act_aware=args.act_aware,
+    #         sigma_fuse=args.sigma_fuse,
+    #     )
+    #     setattr(info["father"], info["name"], svd_linear)
+
+
+    all_selected_ratio = list()
     for layername, ratio in tqdm(layers_min_ratio.items()):
         # set ratio
         raw_linear = module_dict[layername]
@@ -95,3 +110,5 @@ def binary_search_truncation_rank(model, sensitivity_dict, calib_loader, args):
             sigma_fuse=args.sigma_fuse,
         )
         setattr(info["father"], info["name"], svd_linear)
+        all_selected_ratio.append(ratio)
+    return np.array(all_selected_ratio)

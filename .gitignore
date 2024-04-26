@@ -1,1 +1,7 @@
 !cache/
+__pycache__/
+models
+old_cache
+output/
+plots/
+
